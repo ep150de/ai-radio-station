@@ -45,7 +45,10 @@ docker compose -f docker-compose.yml -f docker-compose.piper.yml up -d
   - Better now-playing metadata pushed to Icecast
   - See `docker-compose.icecast.yml` + `liquidsoap/radio.liq`
   - Stream: http://localhost:8000/radio.mp3
-- [ ] Windows / Mac / Linux "appliance" single-binary builds (Tauri or PyInstaller + tray)
+- [x] Desktop appliance builds started with Tauri
+  - Basic Tauri shell initialized in `client/src-tauri`
+  - Foundation for bundling frontend + Python backend as sidecar
+  - See `client/src-tauri/` and future build scripts
 
 ## Phase 4 — Community & Extensions
 

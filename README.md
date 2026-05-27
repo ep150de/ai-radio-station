@@ -190,7 +190,21 @@ The stream stays reasonably in sync with the main radio UI.
 - Listener Request Queue (submit songs + DJ can play them)
 - Improved gapless (crossfade on Icecast stream + client preloading)
 - Icecast + Liquidsoap output (basic support added via `docker-compose.icecast.yml`)
-- Appliance installers
+- Desktop appliance builds (Tauri initialized, Python sidecar planned)
+
+---
+
+## Desktop Appliance (Work in Progress)
+
+We're building native desktop versions using **Tauri** (lightweight, secure, and excellent Rust + web integration).
+
+Basic Tauri shell has been initialized. Full packaging (including bundling the Python backend) is the final major milestone.
+
+To run the desktop version during development:
+```bash
+cd client
+npm run tauri:dev
+```
 
 ---
 
