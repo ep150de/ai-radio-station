@@ -1,25 +1,35 @@
-# Phase 2 — Premium Local DJ Voices (Piper)
+# Phase 2 — Premium Local DJ Voices via Piper
 #
-# Usage:
+# Usage (recommended when you want much more natural voices):
 #   docker compose -f docker-compose.yml -f docker-compose.piper.yml up -d
 #
-# This gives you much more natural, high-quality voice than browser speech synthesis.
+# After starting, the radio will automatically detect Piper and use it for
+# station IDs and song titles. If Piper is not available, it gracefully falls
+# back to browser speech synthesis.
 
 services:
   piper:
     image: rhasspy/wyoming-piper:latest
     container_name: ai-radio-piper
     ports:
-      - "5000:5000"     # HTTP synthesis (used by the radio when available)
-      - "10200:10200"   # Wyoming protocol (for future HA integration etc)
+      - "5000:5000"     # HTTP synthesis endpoint (what the radio uses)
+      - "10200:10200"   # Wyoming protocol (optional, for Home Assistant etc.)
     volumes:
       - ./piper-data:/data
     command: --voice en_US-lessac-high
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/?text=test"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s   # Give it time to download the voice model on first run
 
   radio:
     environment:
       - TTS_PROVIDER=piper
       - PIPER_URL=http://piper:5000
+      - PIPER_VOICE=en_US-lessac-high
     depends_on:
-      - piper
+      piper:
+        condition: service_healthy

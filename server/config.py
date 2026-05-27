@@ -23,9 +23,10 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "info").lower()
 CROSSFADE_MS = int(os.getenv("CROSSFADE_MS", 300))
 DEFAULT_SHUFFLE = os.getenv("DEFAULT_SHUFFLE", "true").lower() == "true"
 
-# Phase 2 (stubs)
+# Phase 2 - Voice / DJ
 PIPER_URL = os.getenv("PIPER_URL", "http://piper:5000")
-TTS_PROVIDER = os.getenv("TTS_PROVIDER", "webspeech")  # webspeech | piper | openai
+PIPER_VOICE = os.getenv("PIPER_VOICE") or None          # Usually controlled by the container --voice flag
+TTS_PROVIDER = os.getenv("TTS_PROVIDER", "webspeech")   # webspeech | piper | auto | openai
 
 # OpenAI fallback (optional)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")

@@ -47,6 +47,7 @@ export function useRadioPlayer() {
   const [isLoading, setIsLoading] = useState(false)
   const [djEnabled, setDjEnabled] = useState(true)           // Phase 2 toggle
   const [voiceVolume, setVoiceVolume] = useState(0.95)
+  const [isPremiumVoice, setIsPremiumVoice] = useState(false)
 
   // Sleep timer (Phase 3 nice-to-have)
   const [sleepMinutes, setSleepMinutes] = useState(0)
@@ -235,12 +236,28 @@ export function useRadioPlayer() {
     window.speechSynthesis.speak(utterance)
   }
 
+  // Check for premium voice availability
+  const checkPremiumVoice = useCallback(async () => {
+    try {
+      const res = await fetch('/api/health')
+      const data = await res.json()
+      setIsPremiumVoice(!!data.premium_voice)
+    } catch {
+      setIsPremiumVoice(false)
+    }
+  }, [])
+
   // Initial + periodic sync
   useEffect(() => {
     refreshState()
+    checkPremiumVoice()
     const id = setInterval(refreshState, 6500)
-    return () => clearInterval(id)
-  }, [refreshState])
+    const healthId = setInterval(checkPremiumVoice, 30000)
+    return () => {
+      clearInterval(id)
+      clearInterval(healthId)
+    }
+  }, [refreshState, checkPremiumVoice])
 
   // --- Playback controls (updated for DJ awareness) ---------------------
   const play = useCallback(async () => {
@@ -348,6 +365,7 @@ export function useRadioPlayer() {
     updateVoiceVolume,
     sleepMinutes,
     setSleepTimer,
+    isPremiumVoice,
     musicAudioRef,
     refresh: refreshState,
   }

@@ -115,20 +115,22 @@ See `DOCKER_DEPLOYMENT.md` (coming in next pass — same tone and structure as v
 
 ---
 
-## Phase 2 — Automatic DJ (Designed In)
+## Phase 2 — Automatic DJ (Completed)
 
-The architecture already contains clean extension points:
+Turn **DJ MODE** on and the station will intelligently speak:
 
-- `server/voice.py` (stub + interface)
-- `docker-compose.piper.yml` (one-line enable for local high-quality Piper TTS)
-- Client already has separate audio pathways ready for ducking
+- Song titles when tracks change
+- Station identifications every few tracks
 
-Future behavior:
-- Between tracks (or on a timer): "You're listening to Suno Beacon..."
-- "Now playing: Dream Sequence in C Minor"
-- Optional light local LLM (your existing Ollama) to vary the language using the original Suno prompt
+**Zero setup** — works immediately using your browser’s built-in speech synthesis.
 
-All of this can be added without touching the core radio engine.
+**For significantly more natural voices**, enable the included Piper profile:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.piper.yml up -d
+```
+
+The radio will automatically detect Piper and start using real generated audio. It falls back gracefully if Piper is not running.
 
 ---
 
@@ -150,17 +152,18 @@ All of this can be added without touching the core radio engine.
 - Ingestion tooling + docs
 - Docker one-command deploy
 
-**Phase 2 (next, low effort)**
-- Local Piper TTS container
-- Station ID + title callouts between tracks
-- Volume ducking
-- UI toggles
+**Phase 2 (Completed)**
+- Automatic DJ with title callouts + station IDs
+- Music ducking + "DJ MODE" toggle
+- Browser speech (default) + robust Piper support for premium voices
+- Sleep timer
 
-**Phase 3 (future)**
-- Sleep timer, favorites, request queue
-- True gapless via server-side mix or HLS
-- Optional Icecast output for real broadcast / multi-room
-- Windows/Mac appliance installer (Tauri or PyInstaller)
+**Phase 3 (In Progress)**
+- Favorites / request queue
+- True gapless playback
+- M3U export
+- Icecast output (optional)
+- Appliance installers
 
 ---
 

@@ -77,6 +77,7 @@ async def health():
         station_name=STATION_NAME,
         tracks_indexed=len(lib),
         current_cycle=pl.cycle,
+        premium_voice=voice_service.is_premium_voice_available(),
     )
 
 
@@ -260,10 +261,13 @@ async def serve_voice_clip(filename: str):
 
 @app.post("/api/dj/speak")
 async def force_dj_speak(payload: dict = None):
-    """Manual trigger for testing or special requests."""
-    text = (payload or {}).get("text", "This is Beacon FM.")
-    clip = voice_service._get_clip(text) if hasattr(voice_service, '_get_clip') else voice_service.generate_title_callout(text)
-    return _clip_to_voiceover(clip, "transition").model_dump()
+    """Manual trigger for testing or special requests (used by the 'Test DJ Voice' button)."""
+    text = (payload or {}).get("text", "Testing the DJ voice. This is Beacon FM.")
+    clip = voice_service.generate_title_callout(text)
+    vo = _clip_to_voiceover(clip, "transition")
+    global _last_voiceover
+    _last_voiceover = vo
+    return vo.model_dump()
 
 
 # --- Root: tiny placeholder UI until real frontend is built -------------

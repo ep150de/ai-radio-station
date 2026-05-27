@@ -61,4 +61,5 @@ class HealthResponse(BaseModel):
     station_name: str
     tracks_indexed: int
     current_cycle: int
-    version: str = "0.1.0-phase1"
+    version: str = "0.2.0-phase2"
+    premium_voice: bool = False   # True when Piper is healthy and being used

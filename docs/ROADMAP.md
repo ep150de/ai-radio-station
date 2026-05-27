@@ -1,4 +1,4 @@
-# Suno Radio Roadmap
+# AI Radio Station Roadmap
 
 ## Phase 1 — Core Appliance (Completed)
 
@@ -11,22 +11,31 @@
 - [x] Keyboard support + library jump
 - [x] "Tune in" behavior for multiple clients
 
-## Phase 2 — The DJ (Next)
+## Phase 2 — The DJ (Completed)
 
-- [ ] Piper TTS container (already in compose skeleton)
-- [ ] `server/voice.py` with clean provider interface
-- [ ] Station ID + title callouts between tracks or on timer
-- [ ] Client-side ducking or server-side mix
-- [ ] UI toggles ("DJ Mode", voice volume)
-- [ ] Optional local LLM banter using original Suno prompts
+**Two-tier voice system** (browser speech by default, real audio when Piper is enabled):
 
-## Phase 3 — Polish & Broadcast
+- [x] Automatic title callouts + station ID bumpers
+- [x] Scheduling (every N tracks)
+- [x] `server/voice.py` with clean `PiperProvider` + `BrowserSpeechProvider`
+- [x] Music ducking during speech (Web Audio)
+- [x] UI toggle ("DJ MODE") + live speaking indicator
+- [x] Voice volume control + "Test DJ Voice" button
+- [x] Robust Piper integration with health checks (when `docker-compose.piper.yml` is used)
+- [x] Graceful fallback to browser speech synthesis when Piper is unavailable
 
-- [ ] Sleep timer
+**How to get premium voices**:
+```bash
+docker compose -f docker-compose.yml -f docker-compose.piper.yml up -d
+```
+
+## Phase 3 — Polish & Broadcast (In Progress)
+
+- [x] Sleep timer with gentle fade-out
 - [ ] Favorites / request queue from the web UI
 - [ ] True gapless (server-side crossfade or HLS)
 - [ ] Optional Icecast / liquidsoap output for real multi-room / public station
-- [ ] M3U export of current order
+- [ ] M3U export of current playlist order
 - [ ] Windows / Mac / Linux "appliance" single-binary builds (Tauri or PyInstaller + tray)
 
 ## Phase 4 — Community & Extensions

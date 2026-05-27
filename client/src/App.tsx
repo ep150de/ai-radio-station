@@ -152,9 +152,24 @@ export default function App() {
                   />
                 </div>
 
+                <button
+                  onClick={async () => {
+                    await fetch('/api/dj/speak', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ text: "This is a test of the Beacon FM DJ voice system." })
+                    })
+                    // The next state poll will pick up the forced voiceover
+                  }}
+                  className="w-full mt-2 py-2 rounded-2xl bg-[#2c261f] hover:bg-[#3a3229] text-sm"
+                >
+                  Test DJ Voice
+                </button>
+
                 <div className="pt-3 border-t border-white/10 text-xs text-[#c8b8a0]">
-                  Phase 2 DJ is powered by your browser’s built-in speech synthesis (works everywhere).<br />
-                  For premium natural voices, run the Piper container (see README).
+                  {player.isPremiumVoice ? "Using premium Piper voice" : "Using browser speech synthesis"}
+                  <br />
+                  For much more natural voices, run the Piper container (see README).
                 </div>
               </div>
             </motion.div>
