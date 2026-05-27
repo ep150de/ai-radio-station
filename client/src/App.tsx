@@ -29,8 +29,24 @@ export default function App() {
   const [stationName] = useState("Beacon FM")
   const [showLibrary, setShowLibrary] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showRequestModal, setShowRequestModal] = useState(false)
+  const [showRequestsManager, setShowRequestsManager] = useState(false)
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0)
 
   useKeyboardShortcuts(player)
+
+  // Poll request count for the operator
+  useEffect(() => {
+    const fetchCount = () => {
+      fetch('/api/requests')
+        .then(r => r.json())
+        .then(d => setPendingRequestsCount(d.count || 0))
+        .catch(() => {})
+    }
+    fetchCount()
+    const id = setInterval(fetchCount, 8000)
+    return () => clearInterval(id)
+  }, [])
 
   const handleVolume = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = parseFloat(e.target.value)
@@ -107,6 +123,20 @@ export default function App() {
             </button>
 
             <button
+              onClick={() => setShowRequestModal(true)}
+              className="flex items-center gap-2 text-xs px-4 py-2 rounded-2xl bg-[#ffbf00] text-[#0d0a07] font-medium hover:brightness-105 active:scale-[0.985]"
+            >
+              Request a Song
+            </button>
+
+            <button
+              onClick={() => setShowRequestsManager(true)}
+              className="flex items-center gap-2 text-xs px-3 py-2 rounded-2xl bg-[#2c261f] hover:bg-[#3a3229] active:bg-black/50"
+            >
+              Requests <span className="text-[#ffbf00] font-mono">({pendingRequestsCount})</span>
+            </button>
+
+            <button
               onClick={() => {
                 const link = document.createElement('a')
                 link.href = '/api/export/m3u'
@@ -143,6 +173,24 @@ export default function App() {
           Space = Play/Pause • Right Arrow = Next • Click progress bar to seek
         </div>
       </div>
+
+      {/* Request a Song Modal (Phase 3) */}
+      <AnimatePresence>
+        {showRequestModal && (
+          <RequestSongModal 
+            onClose={() => setShowRequestModal(false)} 
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Requests Manager Modal (Phase 3 - for operator) */}
+      <AnimatePresence>
+        {showRequestsManager && (
+          <RequestsManagerModal 
+            onClose={() => setShowRequestsManager(false)} 
+          />
+        )}
+      </AnimatePresence>
 
       {/* Settings Modal (Phase 2 + 3) */}
       <AnimatePresence>
@@ -213,6 +261,185 @@ export default function App() {
           </div>
         )}
       </AnimatePresence>
+    </div>
+  )
+}
+
+// Request Song Modal (Phase 3)
+function RequestSongModal({ onClose }: { onClose: () => void }) {
+  const [tracks, setTracks] = useState<any[]>([])
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [message, setMessage] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [success, setSuccess] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/tracks').then(r => r.json()).then(d => setTracks(d.tracks || []))
+  }, [])
+
+  const submitRequest = async () => {
+    if (!selectedId) return
+    setIsSubmitting(true)
+    try {
+      await fetch('/api/requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          track_id: selectedId,
+          message: message.trim() || undefined,
+        }),
+      })
+      setSuccess(true)
+      setTimeout(() => {
+        onClose()
+      }, 1200)
+    } catch (e) {
+      alert("Failed to submit request. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  if (success) {
+    return (
+      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div className="bg-[#1f1a14] rounded-3xl p-8 text-center">
+          <div className="text-2xl mb-2">✓ Request submitted!</div>
+          <div className="text-[#c8b8a0]">The DJ will see your request shortly.</div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div 
+        className="bg-[#1f1a14] rounded-3xl max-w-lg w-full p-6 max-h-[80vh] overflow-auto"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex justify-between mb-4">
+          <div className="font-semibold text-lg">Request a Song</div>
+          <button onClick={onClose} className="text-[#c8b8a0]">Close</button>
+        </div>
+
+        <div className="text-xs text-[#c8b8a0] mb-3">
+          Pick a track from the catalog. The DJ will see your request.
+        </div>
+
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder="Optional message for the DJ..."
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            className="w-full bg-[#0d0a07] border border-[#2c261f] rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[#ffbf00]"
+          />
+        </div>
+
+        <div className="max-h-[42vh] overflow-auto border border-[#2c261f] rounded-2xl p-1 mb-4">
+          {tracks.slice(0, 300).map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setSelectedId(t.id)}
+              className={`w-full text-left px-3 py-2 rounded-xl flex justify-between text-sm hover:bg-white/5 ${selectedId === t.id ? 'bg-[#ffbf00]/10 text-[#ffbf00]' : ''}`}
+            >
+              <span className="truncate">{t.title}</span>
+              <span className="text-[#c8b8a0] pl-4 shrink-0 text-xs self-center">{t.artist}</span>
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={submitRequest}
+          disabled={!selectedId || isSubmitting}
+          className="w-full py-3 rounded-2xl bg-[#ffbf00] text-[#0d0a07] font-semibold disabled:opacity-50"
+        >
+          {isSubmitting ? "Submitting..." : "Submit Request"}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// Requests Manager Modal (for the operator / DJ)
+function RequestsManagerModal({ onClose }: { onClose: () => void }) {
+  const [requests, setRequests] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const refresh = () => {
+    setLoading(true)
+    fetch('/api/requests')
+      .then(r => r.json())
+      .then(d => {
+        setRequests(d.requests || [])
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    refresh()
+    const id = setInterval(refresh, 6000)
+    return () => clearInterval(id)
+  }, [])
+
+  const playRequest = async (req: any) => {
+    try {
+      await fetch(`/api/requests/${req.id}/play`, { method: 'POST' })
+      refresh()
+    } catch (e) {
+      alert("Failed to play requested song")
+    }
+  }
+
+  const dismiss = async (req: any) => {
+    await fetch(`/api/requests/${req.id}`, { method: 'DELETE' })
+    refresh()
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div 
+        className="bg-[#1f1a14] rounded-3xl max-w-lg w-full p-6 max-h-[75vh] overflow-auto"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex justify-between mb-4">
+          <div className="font-semibold text-lg">Song Requests ({requests.length})</div>
+          <button onClick={onClose} className="text-[#c8b8a0]">Close</button>
+        </div>
+
+        {loading && requests.length === 0 && <div className="text-center py-8 text-[#c8b8a0]">Loading requests...</div>}
+
+        {!loading && requests.length === 0 && (
+          <div className="text-center py-8 text-[#c8b8a0]">No pending requests. The airwaves are quiet.</div>
+        )}
+
+        <div className="space-y-3">
+          {requests.map((req) => (
+            <div key={req.id} className="bg-[#0d0a07] rounded-2xl p-4">
+              <div className="font-medium">{req.title}</div>
+              <div className="text-sm text-[#c8b8a0]">{req.artist}</div>
+              {req.message && (
+                <div className="mt-2 text-xs italic text-[#ffbf00]">“{req.message}”</div>
+              )}
+              <div className="flex gap-2 mt-3">
+                <button 
+                  onClick={() => playRequest(req)}
+                  className="flex-1 py-2 rounded-xl bg-[#ffbf00] text-[#0d0a07] text-sm font-medium"
+                >
+                  Play Now
+                </button>
+                <button 
+                  onClick={() => dismiss(req)}
+                  className="px-4 py-2 rounded-xl bg-[#2c261f] text-sm"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

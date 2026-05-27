@@ -34,7 +34,7 @@ docker compose -f docker-compose.yml -f docker-compose.piper.yml up -d
 - [x] Sleep timer with gentle fade-out
 - [x] M3U export of current non-repeating playlist order
 - [x] Basic Favorites system (star tracks in catalog, persisted)
-- [ ] Request queue from the web UI
+- [x] Listener Request Queue (submit requests + operator management with Play Now)
 - [ ] True gapless (server-side crossfade or HLS)
 - [ ] Optional Icecast / liquidsoap output for real multi-room / public station
 - [ ] Windows / Mac / Linux "appliance" single-binary builds (Tauri or PyInstaller + tray)

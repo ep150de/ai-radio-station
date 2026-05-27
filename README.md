@@ -159,9 +159,10 @@ The radio will automatically detect Piper and start using real generated audio. 
 - Sleep timer
 
 **Phase 3 (In Progress)**
-- Favorites / request queue
+- M3U export of current playlist
+- Favorites system
+- Listener Request Queue (submit songs + DJ can play them)
 - True gapless playback
-- M3U export
 - Icecast output (optional)
 - Appliance installers
 

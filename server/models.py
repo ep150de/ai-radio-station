@@ -57,6 +57,16 @@ class VoiceoverInfo(BaseModel):
     kind: Literal["title", "station_id", "transition"] = "title"
 
 
+class SongRequest(BaseModel):
+    """A song request submitted by a listener."""
+    id: str
+    track_id: str
+    title: str
+    artist: str
+    message: Optional[str] = None
+    requested_at: str   # ISO timestamp
+
+
 class HealthResponse(BaseModel):
     status: Literal["healthy", "degraded"] = "healthy"
     station_name: str

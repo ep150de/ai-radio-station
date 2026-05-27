@@ -23,6 +23,7 @@ from library import scan_library, get_track_by_id
 from playlist import manager as playlist_manager
 from streaming import audio_file_response
 from voice import voice_service, VoiceClip
+from requests_queue import request_queue
 
 # --- App setup -----------------------------------------------------------
 
@@ -330,6 +331,66 @@ async def get_favorites():
 async def toggle_favorite(track_id: str):
     is_favorite = playlist_manager.toggle_favorite(track_id)
     return {"track_id": track_id, "is_favorite": is_favorite}
+
+
+# --- Phase 3: Request Queue ---------------------------------------------
+
+@app.get("/api/requests")
+async def get_requests():
+    """Return all pending song requests (newest first)."""
+    requests = request_queue.list()
+    return {"requests": [r.model_dump() for r in requests], "count": len(requests)}
+
+
+@app.post("/api/requests")
+async def submit_request(payload: dict):
+    """Submit a new song request (public - anyone can request)."""
+    track_id = payload.get("track_id")
+    message = payload.get("message")
+
+    if not track_id:
+        raise HTTPException(400, "track_id is required")
+
+    try:
+        req = request_queue.submit(track_id, message)
+        return {"ok": True, "request": req.model_dump()}
+    except ValueError as e:
+        raise HTTPException(404, str(e))
+
+
+@app.delete("/api/requests/{request_id}")
+async def dismiss_request(request_id: str):
+    """Dismiss a request (usually done by the operator after playing or ignoring it)."""
+    success = request_queue.remove(request_id)
+    if not success:
+        raise HTTPException(404, "Request not found")
+    return {"ok": True}
+
+
+@app.post("/api/requests/{request_id}/play")
+async def play_requested_song(request_id: str):
+    """
+    Operator action: Jump to the requested song and remove the request.
+    This is the nicest flow for a live radio feel.
+    """
+    req = request_queue.get_by_id(request_id)
+    if not req:
+        raise HTTPException(404, "Request not found")
+
+    # Jump to the track
+    track = playlist_manager.jump(req.track_id)
+    if not track:
+        request_queue.remove(request_id)  # clean up stale request
+        raise HTTPException(404, "Track no longer exists")
+
+    # Remove the request now that we're playing it
+    request_queue.remove(request_id)
+
+    return {
+        "ok": True,
+        "played_track": track.model_dump(),
+        "request_id": request_id,
+    }
 
 
 # --- Root: tiny placeholder UI until real frontend is built -------------
