@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTheme } from './hooks/useTheme'
 
 // Global keyboard support (space, arrows)
 function useKeyboardShortcuts(player: ReturnType<typeof useRadioPlayer>) {
@@ -26,6 +27,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 export default function App() {
   const player = useRadioPlayer()
+  const theme = useTheme()
   const [stationName] = useState("Beacon FM")
   const [showLibrary, setShowLibrary] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
@@ -206,6 +208,29 @@ export default function App() {
               </div>
 
               <div className="space-y-6 text-sm">
+                {/* Theme Switcher */}
+                <div>
+                  <div className="text-[#c8b8a0] mb-2">UI Theme</div>
+                  <div className="flex gap-2">
+                    {theme.themes.map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => theme.setTheme(t.id)}
+                        className={`flex-1 py-2 rounded-xl text-xs transition ${
+                          theme.theme === t.id 
+                            ? 'bg-[#ffbf00] text-[#0d0a07] font-medium' 
+                            : 'bg-[#2c261f] hover:bg-[#3a3229]'
+                        }`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="text-[10px] text-[#c8b8a0] mt-1 text-center">
+                    Current: {theme.themeLabel}
+                  </div>
+                </div>
+
                 <div>
                   <div className="text-[#c8b8a0] mb-2">DJ Voice Volume</div>
                   <input 
@@ -222,7 +247,6 @@ export default function App() {
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ text: "This is a test of the Beacon FM DJ voice system." })
                     })
-                    // The next state poll will pick up the forced voiceover
                   }}
                   className="w-full mt-2 py-2 rounded-2xl bg-[#2c261f] hover:bg-[#3a3229] text-sm"
                 >

@@ -2,31 +2,74 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================
+   THEME SYSTEM - AI Radio Station
+   ============================================ */
+
 :root {
-  --walnut: #0d0a07;
+  /* Default: Vintage Radio */
+  --bg: #0d0a07;
   --panel: #1f1a14;
-  --cream: #f4e9d8;
-  --parchment: #c8b8a0;
+  --panel-border: #2c261f;
+  --text: #f4e9d8;
+  --text-muted: #c8b8a0;
+  --accent: #ffbf00;
+  --accent-dark: #b8860b;
   --gold: #b8860b;
   --amber: #ffbf00;
+  --vinyl: #0d0a07;
+  --vinyl-ring: #2c261f;
+}
+
+/* Theme: Noir (Clean Dark Modern) */
+[data-theme="noir"] {
+  --bg: #0a0b0f;
+  --panel: #121418;
+  --panel-border: #1f2229;
+  --text: #e8e9ed;
+  --text-muted: #8a8f9a;
+  --accent: #7aa2f7;
+  --accent-dark: #4f6db8;
+  --gold: #7aa2f7;
+  --amber: #7aa2f7;
+  --vinyl: #0f1116;
+  --vinyl-ring: #1f2229;
+}
+
+/* Theme: Neon / Synthwave */
+[data-theme="neon"] {
+  --bg: #0f0520;
+  --panel: #1a0f2e;
+  --panel-border: #2a1f40;
+  --text: #f0e6ff;
+  --text-muted: #a38cd9;
+  --accent: #ff00aa;
+  --accent-dark: #c0007a;
+  --gold: #00f0ff;
+  --amber: #ff00aa;
+  --vinyl: #120a22;
+  --vinyl-ring: #2a1f40;
 }
 
 body {
-  @apply bg-[#0d0a07] text-[#f4e9d8] antialiased;
+  background: var(--bg);
+  color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .receiver-bezel {
-  background: #1f1a14;
-  border: 14px solid #2c261f;
+  background: var(--panel);
+  border: 14px solid var(--panel-border);
   box-shadow: 
     0 25px 50px -12px rgb(0 0 0 / 0.5),
     inset 0 2px 4px 0 rgb(255 255 255 / 0.03),
     inset 0 -4px 6px -1px rgb(0 0 0 / 0.4);
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .led-on-air {
-  box-shadow: 0 0 10px #ffbf00, 0 0 20px #b8860b;
+  box-shadow: 0 0 10px var(--accent), 0 0 20px var(--accent-dark);
   animation: led-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
@@ -36,6 +79,8 @@ body {
 }
 
 .vinyl {
+  background: var(--vinyl);
+  border-color: var(--vinyl-ring);
   transition: transform 0.2s linear;
 }
 
@@ -59,11 +104,11 @@ body {
 }
 
 .progress-bar {
-  background: #2c261f;
+  background: var(--panel-border);
 }
 
 .progress-fill {
-  background: linear-gradient(to right, #ffbf00, #b8860b);
+  background: linear-gradient(to right, var(--accent), var(--accent-dark));
   transition: width 120ms linear;
 }
 
