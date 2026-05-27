@@ -39,11 +39,21 @@ class NowPlaying(BaseModel):
     cycle: int = 1
     is_playing: bool = False
     progress: float = 0.0        # 0.0–1.0
+    voiceover: Optional[VoiceoverInfo] = None   # Phase 2 DJ feature
 
 
 class ControlAction(BaseModel):
     action: Literal["play", "pause", "next", "prev", "jump"]
     track_id: Optional[str] = None
+
+
+class VoiceoverInfo(BaseModel):
+    """Tells the client what (if anything) the DJ should say right now."""
+    text: str
+    # If url is present, play this audio file. Otherwise use browser speechSynthesis.
+    audio_url: Optional[str] = None
+    duration: float = 0.0
+    kind: Literal["title", "station_id", "transition"] = "title"
 
 
 class HealthResponse(BaseModel):

@@ -28,13 +28,17 @@ export default function App() {
   const player = useRadioPlayer()
   const [stationName] = useState("Beacon FM")
   const [showLibrary, setShowLibrary] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
 
   useKeyboardShortcuts(player)
 
-  // Simple volume (client-side only for Phase 1)
   const handleVolume = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = parseFloat(e.target.value)
     player.setVolume(v)
+  }
+
+  const handleVoiceVolume = (e: React.ChangeEvent<HTMLInputElement>) => {
+    player.updateVoiceVolume(parseFloat(e.target.value))
   }
 
   return (
@@ -47,6 +51,15 @@ export default function App() {
             index={player.index} 
             total={player.total} 
           />
+
+          {/* Phase 2 DJ Status */}
+          {player.djEnabled && player.isDJSpeaking && (
+            <div className="mb-4 flex items-center gap-2 px-4 py-2 bg-black/30 rounded-2xl text-sm">
+              <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
+              <span className="text-amber-400 font-medium">DJ SPEAKING</span>
+              <span className="text-[#c8b8a0] ml-2 truncate max-w-[420px]">“{player.voiceover?.text}”</span>
+            </div>
+          )}
 
           <NowPlaying
             track={player.track}
@@ -66,23 +79,38 @@ export default function App() {
             />
           </div>
 
-          {/* Volume + actions row */}
-          <div className="mt-5 flex items-center gap-4 px-1">
+          {/* Volume + actions row (Phase 2 enhanced) */}
+          <div className="mt-5 flex items-center gap-4 px-1 flex-wrap">
             <div className="flex-1 flex items-center gap-3 text-xs text-[#c8b8a0]">
               <span>VOL</span>
               <input 
                 type="range" 
                 min={0} max={1} step={0.01} defaultValue={0.85}
                 onChange={handleVolume}
-                className="accent-[#ffbf00] w-32" 
+                className="accent-[#ffbf00] w-24" 
               />
             </div>
+
+            {/* Phase 2 DJ Controls */}
+            <button
+              onClick={player.toggleDJ}
+              className={`flex items-center gap-2 text-xs px-3 py-2 rounded-2xl transition ${player.djEnabled ? 'bg-[#ffbf00] text-[#0d0a07] font-medium' : 'bg-[#2c261f] hover:bg-[#3a3229]'}`}
+            >
+              DJ MODE {player.djEnabled ? 'ON' : 'OFF'}
+            </button>
 
             <button 
               onClick={() => setShowLibrary(true)}
               className="flex items-center gap-2 text-xs px-4 py-2 rounded-2xl bg-[#2c261f] hover:bg-[#3a3229] active:bg-black/50"
             >
-              <ListMusic className="w-3.5 h-3.5" /> BROWSE CATALOG
+              <ListMusic className="w-3.5 h-3.5" /> CATALOG
+            </button>
+
+            <button
+              onClick={() => setShowSettings(true)}
+              className="p-2 rounded-2xl bg-[#2c261f] hover:bg-[#3a3229]"
+            >
+              <Settings className="w-4 h-4" />
             </button>
           </div>
 
@@ -101,7 +129,40 @@ export default function App() {
         </div>
       </div>
 
-      {/* Minimal Library Modal (Phase 1) */}
+      {/* Settings Modal (Phase 2 + 3) */}
+      <AnimatePresence>
+        {showSettings && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowSettings(false)}>
+            <motion.div 
+              className="bg-[#1f1a14] rounded-3xl max-w-md w-full p-6"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex justify-between mb-5">
+                <div className="font-semibold text-lg">Station Settings</div>
+                <button onClick={() => setShowSettings(false)}>Close</button>
+              </div>
+
+              <div className="space-y-6 text-sm">
+                <div>
+                  <div className="text-[#c8b8a0] mb-2">DJ Voice Volume</div>
+                  <input 
+                    type="range" min={0} max={1} step={0.05} value={player.voiceVolume}
+                    onChange={handleVoiceVolume}
+                    className="accent-[#ffbf00] w-full" 
+                  />
+                </div>
+
+                <div className="pt-3 border-t border-white/10 text-xs text-[#c8b8a0]">
+                  Phase 2 DJ is powered by your browser’s built-in speech synthesis (works everywhere).<br />
+                  For premium natural voices, run the Piper container (see README).
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Minimal Library Modal */}
       <AnimatePresence>
         {showLibrary && (
           <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowLibrary(false)}>

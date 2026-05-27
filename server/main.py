@@ -16,11 +16,13 @@ from fastapi.staticfiles import StaticFiles
 from config import (
     STATION_NAME, PORT, MUSIC_DIR, DATA_DIR,
     PLAYLIST_STATE_FILE, LIBRARY_CACHE_FILE,
+    VOICOVER_CACHE_DIR,
 )
 from models import HealthResponse, Track, NowPlaying, PlaylistState
 from library import scan_library, get_track_by_id
 from playlist import manager as playlist_manager
 from streaming import audio_file_response
+from voice import voice_service, VoiceClip
 
 # --- App setup -----------------------------------------------------------
 
@@ -85,10 +87,16 @@ async def get_tracks():
     return {"tracks": [t.model_dump() for t in lib], "total": len(lib)}
 
 
+# Global last voiceover (simple way for clients to pick it up)
+_last_voiceover: Optional[VoiceoverInfo] = None
+
+
 @app.get("/api/state", response_model=NowPlaying)
 async def get_state():
-    """Current radio state — powered by the real playlist manager."""
+    """Current radio state — powered by the real playlist manager + DJ."""
     data = _get_state()
+    global _last_voiceover
+
     return NowPlaying(
         track=Track(**data["track"]) if data.get("track") else None,
         index=data["index"],
@@ -96,21 +104,38 @@ async def get_state():
         cycle=data["cycle"],
         is_playing=data["is_playing"],
         progress=0.0,
+        # Phase 2: attach pending voiceover if one exists
+        voiceover=_last_voiceover,
     )
 
 
 @app.post("/api/control/next")
 async def control_next():
+    global _last_voiceover
     current = playlist_manager.advance(1)
     if not current:
         raise HTTPException(400, "No tracks")
-    return {"ok": True, "new_index": playlist_manager.state.current_index, "cycle": playlist_manager.state.cycle}
+
+    # Phase 2: Decide if the DJ should speak on this track change
+    _last_voiceover = _decide_voiceover(current)
+    return {
+        "ok": True,
+        "new_index": playlist_manager.state.current_index,
+        "cycle": playlist_manager.state.cycle,
+        "voiceover": _last_voiceover.model_dump() if _last_voiceover else None,
+    }
 
 
 @app.post("/api/control/play")
 async def control_play():
+    global _last_voiceover
     playlist_manager.set_playing(True)
-    return {"ok": True}
+
+    # On first play, give a nice station ID
+    if _last_voiceover is None:
+        _last_voiceover = _decide_voiceover(playlist_manager.current())
+
+    return {"ok": True, "voiceover": _last_voiceover.model_dump() if _last_voiceover else None}
 
 
 @app.post("/api/control/pause")
@@ -170,6 +195,75 @@ async def up_next(limit: int = 5):
             t = id_to_track[tid]
             result.append({"index": idx, "title": t.title, "artist": t.artist, "id": t.id})
     return {"up_next": result, "cycle": st.cycle}
+
+
+# --- Phase 2: DJ Voiceover System ---------------------------------------
+
+# Simple in-memory "tracks since last station ID" counter
+_tracks_since_id = 0
+_DJ_INTERVAL = 3          # Speak a station ID every N tracks
+_SPEAK_TITLES = True      # Speak the title of almost every new track
+
+
+def _decide_voiceover(current_track: Optional[Track]) -> Optional[VoiceoverInfo]:
+    """
+    Decide whether the DJ should speak right now.
+    Returns VoiceoverInfo or None.
+    """
+    global _tracks_since_id
+
+    if not current_track:
+        return None
+
+    _tracks_since_id += 1
+
+    # Every N tracks → station ID
+    if _tracks_since_id >= _DJ_INTERVAL:
+        _tracks_since_id = 0
+        clip = voice_service.generate_station_id()
+        return _clip_to_voiceover(clip, "station_id")
+
+    # Otherwise, speak the title of the new track
+    if _SPEAK_TITLES:
+        clip = voice_service.generate_title_callout(current_track.title, current_track.artist)
+        return _clip_to_voiceover(clip, "title")
+
+    return None
+
+
+def _clip_to_voiceover(clip: VoiceClip, kind: str) -> VoiceoverInfo:
+    audio_url = None
+    if clip.path and clip.path.exists() and clip.path.stat().st_size > 200:
+        # Serve the generated WAV through our existing audio route pattern
+        audio_url = f"/voice/{clip.path.name}"
+
+    return VoiceoverInfo(
+        text=clip.text,
+        audio_url=audio_url,
+        duration=clip.duration or 3.5,
+        kind=kind,
+    )
+
+
+@app.get("/voice/{filename}")
+async def serve_voice_clip(filename: str):
+    """Serve generated voice clips (only created when Piper is available)."""
+    path = VOICOVER_CACHE_DIR / filename
+    if not path.exists():
+        raise HTTPException(404, "Voice clip not found")
+    return FileResponse(
+        path=str(path),
+        media_type="audio/wav",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
+
+
+@app.post("/api/dj/speak")
+async def force_dj_speak(payload: dict = None):
+    """Manual trigger for testing or special requests."""
+    text = (payload or {}).get("text", "This is Beacon FM.")
+    clip = voice_service._get_clip(text) if hasattr(voice_service, '_get_clip') else voice_service.generate_title_callout(text)
+    return _clip_to_voiceover(clip, "transition").model_dump()
 
 
 # --- Root: tiny placeholder UI until real frontend is built -------------

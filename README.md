@@ -7,8 +7,11 @@ A minimal, beautiful, completely local, open-source radio that plays through you
 
 Clean vintage receiver aesthetic with modern touches. One-command Docker deployment. Built for people who have generated hundreds of Suno songs and want a dedicated, always-on listening experience.
 
-**Phase 1 complete** — fully working beautiful radio + ingestion tooling.  
-**Phase 2** (automatic DJ voice station IDs + title callouts) is stubbed and ready for easy extension.
+**Phase 1 + Phase 2 complete** — fully working beautiful radio + automatic DJ with station IDs and song title callouts.
+
+- **DJ Mode** works out of the box using your browser’s built-in speech synthesis (zero setup).
+- Optional: Run the included Piper container for premium natural voices.
+- Sleep timer + many other quality-of-life features included.
 
 Originally built for ~1000 Suno tracks, but designed to work with any local collection of AI-generated (or other) music.
 

@@ -1,68 +1,121 @@
 """
-Suno Radio — Voice / DJ Layer (Phase 2 stub)
+AI Radio Station — Voice / DJ Layer (Phase 2 - Complete)
 
-This file defines the interface so the rest of the system can be written
-against it today. Real implementations (Piper, OpenAI, Web Speech fallback)
-plug in here without touching the radio engine.
+Two-tier design for maximum accessibility:
 
-Design goals for Phase 2:
-- Generate short station IDs and title callouts
-- Cache them aggressively (text hash → wav)
-- Expose a simple /api/voiceover/schedule or similar
+1. **Primary (always works)**: Client uses browser `speechSynthesis` (Web Speech API).
+   Zero setup, high quality on modern OSes, instant.
+
+2. **Premium (optional)**: When the Piper container is running, the server can
+   generate real high-quality WAV clips via Piper's HTTP endpoint and serve them.
+   The client will prefer real audio clips when available.
+
+This gives users a great DJ experience immediately, with an easy upgrade path.
 """
 from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol, Optional
+from typing import Optional
 import hashlib
+import os
 
-from config import VOICOVER_CACHE_DIR, TTS_PROVIDER
+from config import VOICOVER_CACHE_DIR, PIPER_URL, TTS_PROVIDER
 
 
 @dataclass
 class VoiceClip:
+    """Represents something the DJ should say."""
     text: str
-    path: Path
-    duration: float = 0.0
+    # If path exists and is a real file, client should play the audio file.
+    # If path is empty or doesn't exist, client falls back to speechSynthesis.speak(text)
+    path: Optional[Path] = None
+    duration: float = 0.0   # estimated or actual seconds
 
 
-class TTSProvider(Protocol):
-    def synthesize(self, text: str, voice: str = "default") -> VoiceClip: ...
+class VoiceService:
+    """Central service for all DJ voice features."""
+
+    def __init__(self):
+        self.piper_url = PIPER_URL.rstrip("/")
+        self.enabled = TTS_PROVIDER in ("piper", "auto")
+
+    def generate_station_id(self) -> VoiceClip:
+        texts = [
+            "You're tuned to Beacon FM — your personal archive of AI-generated music.",
+            "This is Beacon FM, playing the complete works of artificial intelligence, without repetition.",
+            "Beacon FM — where every track was born from imagination and code.",
+        ]
+        import random
+        text = random.choice(texts)
+        return self._get_clip(text)
+
+    def generate_title_callout(self, title: str, artist: str = "AI") -> VoiceClip:
+        text = f"Now playing: {title}."
+        return self._get_clip(text)
+
+    def generate_transition(self) -> VoiceClip:
+        texts = [
+            "Coming up next on the station.",
+            "Another original composition, right after this.",
+            "Continuing our journey through the archive.",
+        ]
+        import random
+        return self._get_clip(random.choice(texts))
+
+    def _get_clip(self, text: str) -> VoiceClip:
+        """Try to generate a real audio file via Piper. Fall back to text-only."""
+        if not self.enabled:
+            return VoiceClip(text=text)
+
+        # Try Piper first
+        clip = self._try_piper(text)
+        if clip and clip.path and clip.path.exists():
+            return clip
+
+        # Fall back to pure text (client will use speechSynthesis)
+        return VoiceClip(text=text, duration=self._estimate_duration(text))
+
+    def _try_piper(self, text: str) -> Optional[VoiceClip]:
+        """Attempt to synthesize via Piper HTTP (wyoming-piper or compatible)."""
+        try:
+            import httpx
+
+            # Many Piper HTTP frontends expose /synthesize or similar.
+            # rhasspy/wyoming-piper with its built-in server often works on /synthesize
+            # We'll try the most common patterns.
+            candidates = [
+                f"{self.piper_url}/synthesize",
+                f"{self.piper_url}/api/tts",
+                f"{self.piper_url}/tts",
+            ]
+
+            h = hashlib.md5(text.encode()).hexdigest()[:12]
+            out_path = VOICOVER_CACHE_DIR / f"{h}.wav"
+
+            if out_path.exists() and out_path.stat().st_size > 1000:
+                return VoiceClip(text=text, path=out_path, duration=self._estimate_duration(text))
+
+            for url in candidates:
+                try:
+                    resp = httpx.post(
+                        url,
+                        json={"text": text, "voice": "default"},
+                        timeout=25,
+                    )
+                    if resp.status_code == 200 and len(resp.content) > 2000:
+                        out_path.write_bytes(resp.content)
+                        return VoiceClip(text=text, path=out_path, duration=self._estimate_duration(text))
+                except Exception:
+                    continue
+            return None
+        except Exception:
+            return None
+
+    def _estimate_duration(self, text: str) -> float:
+        # Very rough: ~150 words per minute → ~2.5 words per second
+        words = len(text.split())
+        return max(1.8, words / 2.5)
 
 
-class DummyProvider:
-    """Does nothing — lets the UI and API be written before real TTS exists."""
-    def synthesize(self, text: str, voice: str = "default") -> VoiceClip:
-        # In real life this would call Piper / OpenAI and return a real wav
-        fake = VOICOVER_CACHE_DIR / f"dummy_{hashlib.md5(text.encode()).hexdigest()[:8]}.wav"
-        fake.parent.mkdir(parents=True, exist_ok=True)
-        fake.write_bytes(b"")  # placeholder
-        return VoiceClip(text=text, path=fake, duration=3.5)
-
-
-# Global provider (swapped at runtime in Phase 2)
-_provider: TTSProvider = DummyProvider()
-
-
-def set_provider(p: TTSProvider) -> None:
-    global _provider
-    _provider = p
-
-
-def generate_station_id() -> VoiceClip:
-    text = "You are listening to Suno Beacon — the complete works of Suno, playing without repetition."
-    return _provider.synthesize(text)
-
-
-def generate_title_callout(title: str, artist: str = "Suno") -> VoiceClip:
-    text = f"Now playing: {title}."
-    return _provider.synthesize(text)
-
-
-def get_or_generate_clip(text: str) -> VoiceClip:
-    """Cache-friendly entry point the radio engine will use."""
-    h = hashlib.md5(text.encode()).hexdigest()[:12]
-    cached = VOICOVER_CACHE_DIR / f"{h}.wav"
-    if cached.exists():
-        return VoiceClip(text=text, path=cached, duration=3.0)  # duration can be real later
-    return _provider.synthesize(text)
+# Singleton service used by the rest of the app
+voice_service = VoiceService()

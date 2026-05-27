@@ -1,13 +1,17 @@
-# Phase 2 — Add local high-quality Piper TTS
-# Usage: docker compose -f docker-compose.yml -f docker-compose.piper.yml up -d
+# Phase 2 — Premium Local DJ Voices (Piper)
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.piper.yml up -d
+#
+# This gives you much more natural, high-quality voice than browser speech synthesis.
 
 services:
   piper:
     image: rhasspy/wyoming-piper:latest
-    container_name: suno-radio-piper
+    container_name: ai-radio-piper
     ports:
-      - "5000:5000"
-      - "10200:10200"
+      - "5000:5000"     # HTTP synthesis (used by the radio when available)
+      - "10200:10200"   # Wyoming protocol (for future HA integration etc)
     volumes:
       - ./piper-data:/data
     command: --voice en_US-lessac-high
