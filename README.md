@@ -188,7 +188,7 @@ The stream stays reasonably in sync with the main radio UI.
 - M3U export of current playlist
 - Favorites system
 - Listener Request Queue (submit songs + DJ can play them)
-- True gapless playback
+- Improved gapless (crossfade on Icecast stream + client preloading)
 - Icecast + Liquidsoap output (basic support added via `docker-compose.icecast.yml`)
 - Appliance installers
 

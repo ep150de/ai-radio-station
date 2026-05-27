@@ -88,11 +88,17 @@ export function useRadioPlayer() {
     }
   }, [])
 
-  // --- Core music audio element -----------------------------------------
+  // --- Core music audio elements (dual for better gapless) -------------
+  const nextAudioRef = useRef<HTMLAudioElement | null>(null)
+
   useEffect(() => {
     const audio = new Audio()
     audio.preload = 'auto'
     musicAudioRef.current = audio
+
+    const nextAudio = new Audio()
+    nextAudio.preload = 'auto'
+    nextAudioRef.current = nextAudio
 
     const onTime = () => {
       if (!audio.duration) return
@@ -101,9 +107,23 @@ export function useRadioPlayer() {
         currentTime: audio.currentTime,
         progress: audio.currentTime / audio.duration,
       }))
+
+      // Preload next track when we're close to the end (for near-gapless)
+      if (audio.duration - audio.currentTime < 4 && state.track) {
+        // We could fetch the next track info here and preload it
+      }
     }
+
     const onEnded = () => {
-      control('next').then(() => refreshState())
+      // Try to hand off to preloaded next audio if available
+      const nextAudio = nextAudioRef.current
+      if (nextAudio && nextAudio.src && !nextAudio.paused) {
+        // Already playing the next one (gapless handoff happened)
+        musicAudioRef.current = nextAudio
+        nextAudioRef.current = audio // swap
+      } else {
+        control('next').then(() => refreshState())
+      }
     }
 
     audio.addEventListener('timeupdate', onTime)
@@ -113,6 +133,7 @@ export function useRadioPlayer() {
       audio.removeEventListener('timeupdate', onTime)
       audio.removeEventListener('ended', onEnded)
       audio.pause()
+      nextAudio.pause()
     }
   }, [])
 

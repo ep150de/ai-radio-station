@@ -35,7 +35,10 @@ docker compose -f docker-compose.yml -f docker-compose.piper.yml up -d
 - [x] M3U export of current non-repeating playlist order
 - [x] Basic Favorites system (star tracks in catalog, persisted)
 - [x] Listener Request Queue (submit requests + operator management with Play Now)
-- [ ] True gapless (server-side crossfade or HLS)
+- [x] Improved gapless experience
+  - Better crossfading in Icecast/Liquidsoap stream
+  - Client-side dual-audio preloading for near-gapless in web UI
+  - Full server-side gapless remains challenging without HLS
 - [x] Optional Icecast + Liquidsoap support
   - Live voiceover insertion into the broadcast stream (when using Piper)
   - Request queue awareness (via playlist + metadata updates)

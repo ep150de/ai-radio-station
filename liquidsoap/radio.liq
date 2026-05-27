@@ -42,9 +42,9 @@ server.register(namespace="",
 )
 
 # === Mixing with ducking ===
-# Simple crossfade + ducking when voiceover plays
+# Good crossfade for music + high priority for voiceovers
 stream = cross(
-  duration=1.5,
+  duration=2.5,
   music,
   voiceover_queue
 )
