@@ -151,7 +151,12 @@ Your stream will be available at:
 
 You can point VLC, other players, or even hardware internet radios at this URL.
 
-**Note**: This is currently a basic implementation. It follows the playlist order. More advanced features (inserting the live DJ voice, reacting to requests, etc.) are planned.
+**Current capabilities**:
+- Live DJ voiceovers are inserted into the stream (when using Piper)
+- Request queue is reflected via playlist updates + metadata
+- Proper now-playing titles sent to Icecast
+
+The stream stays reasonably in sync with the main radio UI.
 
 ---
 

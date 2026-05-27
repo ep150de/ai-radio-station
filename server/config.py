@@ -28,6 +28,10 @@ PIPER_URL = os.getenv("PIPER_URL", "http://piper:5000")
 PIPER_VOICE = os.getenv("PIPER_VOICE") or None          # Usually controlled by the container --voice flag
 TTS_PROVIDER = os.getenv("TTS_PROVIDER", "webspeech")   # webspeech | piper | auto | openai
 
+# Phase 3 - Icecast / Liquidsoap control
+LIQUIDSOAP_TELNET_HOST = os.getenv("LIQUIDSOAP_TELNET_HOST", "liquidsoap")
+LIQUIDSOAP_TELNET_PORT = int(os.getenv("LIQUIDSOAP_TELNET_PORT", 1234))
+
 # OpenAI fallback (optional)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_TTS_MODEL = os.getenv("OPENAI_TTS_MODEL", "tts-1")

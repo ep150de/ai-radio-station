@@ -36,10 +36,12 @@ docker compose -f docker-compose.yml -f docker-compose.piper.yml up -d
 - [x] Basic Favorites system (star tracks in catalog, persisted)
 - [x] Listener Request Queue (submit requests + operator management with Play Now)
 - [ ] True gapless (server-side crossfade or HLS)
-- [x] Optional Icecast + Liquidsoap support (basic continuous stream from current playlist)
+- [x] Optional Icecast + Liquidsoap support
+  - Live voiceover insertion into the broadcast stream (when using Piper)
+  - Request queue awareness (via playlist + metadata updates)
+  - Better now-playing metadata pushed to Icecast
   - See `docker-compose.icecast.yml` + `liquidsoap/radio.liq`
-  - Stream available at http://localhost:8000/radio.mp3 when enabled
-  - Future: live voiceover insertion + request queue awareness
+  - Stream: http://localhost:8000/radio.mp3
 - [ ] Windows / Mac / Linux "appliance" single-binary builds (Tauri or PyInstaller + tray)
 
 ## Phase 4 — Community & Extensions

@@ -24,6 +24,7 @@ from playlist import manager as playlist_manager
 from streaming import audio_file_response
 from voice import voice_service, VoiceClip
 from requests_queue import request_queue
+from stream_control import insert_voiceover, update_now_playing
 
 # --- App setup -----------------------------------------------------------
 
@@ -120,6 +121,13 @@ async def control_next():
 
     # Phase 2: Decide if the DJ should speak on this track change
     _last_voiceover = _decide_voiceover(current)
+
+    # Phase 3: Push better metadata to Icecast
+    try:
+        update_now_playing(current.title, current.artist)
+    except Exception:
+        pass
+
     return {
         "ok": True,
         "new_index": playlist_manager.state.current_index,
@@ -133,9 +141,16 @@ async def control_play():
     global _last_voiceover
     playlist_manager.set_playing(True)
 
+    current = playlist_manager.current()
+    if current:
+        try:
+            update_now_playing(current.title, current.artist)
+        except Exception:
+            pass
+
     # On first play, give a nice station ID
     if _last_voiceover is None:
-        _last_voiceover = _decide_voiceover(playlist_manager.current())
+        _last_voiceover = _decide_voiceover(current)
 
     return {"ok": True, "voiceover": _last_voiceover.model_dump() if _last_voiceover else None}
 
@@ -238,6 +253,12 @@ def _clip_to_voiceover(clip: VoiceClip, kind: str) -> VoiceoverInfo:
     if clip.path and clip.path.exists() and clip.path.stat().st_size > 200:
         # Serve the generated WAV through our existing audio route pattern
         audio_url = f"/voice/{clip.path.name}"
+
+        # Phase 3: Push this voiceover live into the Icecast stream (if running)
+        try:
+            insert_voiceover(str(clip.path), clip.text)
+        except Exception as e:
+            print(f"[stream] Could not push voiceover to Icecast: {e}")
 
     return VoiceoverInfo(
         text=clip.text,
@@ -385,6 +406,12 @@ async def play_requested_song(request_id: str):
 
     # Remove the request now that we're playing it
     request_queue.remove(request_id)
+
+    # Push metadata to Icecast immediately
+    try:
+        update_now_playing(track.title, track.artist)
+    except Exception:
+        pass
 
     return {
         "ok": True,
