@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Build output (we deliberately build into server/static)
+# but keep the placeholder
+# server/static/*   (intentionally not ignored so the inline player works)
+
+# Local data & music (user owns these)
+music/
+data/
+piper-data/
+*.log
+
+# Env
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

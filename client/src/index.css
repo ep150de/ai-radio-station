@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --walnut: #0d0a07;
+  --panel: #1f1a14;
+  --cream: #f4e9d8;
+  --parchment: #c8b8a0;
+  --gold: #b8860b;
+  --amber: #ffbf00;
+}
+
+body {
+  @apply bg-[#0d0a07] text-[#f4e9d8] antialiased;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.receiver-bezel {
+  background: #1f1a14;
+  border: 14px solid #2c261f;
+  box-shadow: 
+    0 25px 50px -12px rgb(0 0 0 / 0.5),
+    inset 0 2px 4px 0 rgb(255 255 255 / 0.03),
+    inset 0 -4px 6px -1px rgb(0 0 0 / 0.4);
+}
+
+.led-on-air {
+  box-shadow: 0 0 10px #ffbf00, 0 0 20px #b8860b;
+  animation: led-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes led-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+.vinyl {
+  transition: transform 0.2s linear;
+}
+
+.vinyl.playing {
+  animation: vinyl-spin 3.2s linear infinite;
+}
+
+@keyframes vinyl-spin {
+  to { transform: rotate(360deg); }
+}
+
+.tuner-text {
+  font-feature-settings: "tnum";
+  letter-spacing: 1.5px;
+}
+
+.track-title {
+  font-size: 1.35rem;
+  line-height: 1.1;
+  font-weight: 600;
+}
+
+.progress-bar {
+  background: #2c261f;
+}
+
+.progress-fill {
+  background: linear-gradient(to right, #ffbf00, #b8860b);
+  transition: width 120ms linear;
+}
+
+.radio-button {
+  transition: all 80ms ease;
+}
+
+.radio-button:active {
+  transform: translateY(1px) scale(0.985);
+}
+
+.knob {
+  box-shadow: 0 2px 4px rgb(0 0 0 / 0.3), inset 0 1px 0 rgb(255 255 255 / 0.15);
+}

@@ -1,0 +1,21 @@
+# Phase 2 — Add local high-quality Piper TTS
+# Usage: docker compose -f docker-compose.yml -f docker-compose.piper.yml up -d
+
+services:
+  piper:
+    image: rhasspy/wyoming-piper:latest
+    container_name: suno-radio-piper
+    ports:
+      - "5000:5000"
+      - "10200:10200"
+    volumes:
+      - ./piper-data:/data
+    command: --voice en_US-lessac-high
+    restart: unless-stopped
+
+  radio:
+    environment:
+      - TTS_PROVIDER=piper
+      - PIPER_URL=http://piper:5000
+    depends_on:
+      - piper

@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # Suno Radio — Phase 1 core (FastAPI + static frontend)
+  radio:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: suno-radio
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./music:/music:ro
+      - ./data:/data
+    environment:
+      - MUSIC_DIR=/music
+      - DATA_DIR=/data
+      - PORT=8080
+      - STATION_NAME=Beacon FM
+      - CROSSFADE_MS=300
+      - LOG_LEVEL=info
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Optional Phase 2: Local Piper TTS (uncomment and use docker-compose -f docker-compose.yml -f docker-compose.piper.yml up)
+  # piper:
+  #   image: rhasspy/wyoming-piper:latest
+  #   container_name: suno-radio-piper
+  #   ports:
+  #     - "5000:5000"   # HTTP demo + simple API
+  #     - "10200:10200" # Wyoming protocol
+  #   volumes:
+  #     - ./piper-data:/data
+  #   command: --voice en_US-lessac-high
+  #   restart: unless-stopped
