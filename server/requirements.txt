@@ -10,3 +10,6 @@ mutagen==1.47.0          # ID3 / metadata (light, pure Python)
 # Future / Phase 2 (commented)
 # aiosqlite==0.20.0
 # httpx==0.27.2          # for Piper / OpenAI calls
+
+# Build dependency for appliance packaging (install when building):
+# pyinstaller>=6.0
