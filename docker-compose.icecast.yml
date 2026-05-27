@@ -1,0 +1,47 @@
+# Optional Icecast + Liquidsoap support for AI Radio Station
+#
+# This profile turns your personal radio into a real broadcast station.
+# Multiple listeners can tune in simultaneously using any Icecast-compatible
+# player (VLC, foobar2000, hardware radios, etc.).
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.icecast.yml up -d
+#
+# The stream will be available at:
+#   http://localhost:8000/radio.mp3   (mountpoint defined below)
+#
+# Note: This is currently a basic implementation. It streams the current
+# playlist order. Advanced features (live voiceover insertion, request queue
+# awareness) can be added later.
+
+services:
+  icecast:
+    image: ghcr.io/linuxserver/icecast:latest
+    container_name: ai-radio-icecast
+    ports:
+      - "8000:8000"   # Icecast HTTP port (stream + admin)
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - ICECAST_SOURCE_PASSWORD=hackme
+      - ICECAST_ADMIN_PASSWORD=hackme
+      - ICECAST_RELAY_PASSWORD=hackme
+    volumes:
+      - ./icecast-data:/config
+    restart: unless-stopped
+
+  liquidsoap:
+    image: savonet/liquidsoap:v2.2.4
+    container_name: ai-radio-liquidsoap
+    depends_on:
+      - icecast
+    volumes:
+      - ./music:/music:ro
+      - ./data:/data:ro                 # So it can read the current playlist state
+      - ./liquidsoap:/etc/liquidsoap    # For custom scripts
+    command: >
+      liquidsoap /etc/liquidsoap/radio.liq
+    restart: unless-stopped
+    environment:
+      - RADIO_API_URL=http://radio:8080   # Points to the main radio service

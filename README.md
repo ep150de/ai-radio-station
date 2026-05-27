@@ -134,6 +134,27 @@ The radio will automatically detect Piper and start using real generated audio. 
 
 ---
 
+## Broadcasting with Icecast (Phase 3)
+
+If you want to turn this into a real multi-listener radio station (for other rooms, the internet, or physical devices), you can enable Icecast support:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.icecast.yml up -d
+```
+
+This adds:
+- An Icecast server on port 8000
+- A Liquidsoap instance that streams your current non-repeating playlist
+
+Your stream will be available at:
+`http://localhost:8000/radio.mp3`
+
+You can point VLC, other players, or even hardware internet radios at this URL.
+
+**Note**: This is currently a basic implementation. It follows the playlist order. More advanced features (inserting the live DJ voice, reacting to requests, etc.) are planned.
+
+---
+
 ## Keyboard Shortcuts (Phase 1)
 
 - `Space` or `K` — Play / Pause
@@ -163,7 +184,7 @@ The radio will automatically detect Piper and start using real generated audio. 
 - Favorites system
 - Listener Request Queue (submit songs + DJ can play them)
 - True gapless playback
-- Icecast output (optional)
+- Icecast + Liquidsoap output (basic support added via `docker-compose.icecast.yml`)
 - Appliance installers
 
 ---
