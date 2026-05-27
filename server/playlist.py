@@ -141,6 +141,27 @@ class QueueManager:
         st.order = st.order[:st.current_index] + new_tail
         self._save()
 
+    # --- Phase 3: Favorites support ---
+
+    def toggle_favorite(self, track_id: str) -> bool:
+        """Toggle a track as favorite. Returns new favorite status."""
+        st = self.state
+        if track_id in st.favorites:
+            st.favorites = [tid for tid in st.favorites if tid != track_id]
+            is_fav = False
+        else:
+            st.favorites.append(track_id)
+            is_fav = True
+        self._save()
+        return is_fav
+
+    def get_favorites(self) -> list[str]:
+        """Return list of favorite track IDs."""
+        return self.state.favorites.copy()
+
+    def is_favorite(self, track_id: str) -> bool:
+        return track_id in self.state.favorites
+
 
 # Global singleton for the server process (simple & sufficient for local use)
 manager = QueueManager()

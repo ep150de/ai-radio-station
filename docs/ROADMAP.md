@@ -32,10 +32,11 @@ docker compose -f docker-compose.yml -f docker-compose.piper.yml up -d
 ## Phase 3 — Polish & Broadcast (In Progress)
 
 - [x] Sleep timer with gentle fade-out
-- [ ] Favorites / request queue from the web UI
+- [x] M3U export of current non-repeating playlist order
+- [x] Basic Favorites system (star tracks in catalog, persisted)
+- [ ] Request queue from the web UI
 - [ ] True gapless (server-side crossfade or HLS)
 - [ ] Optional Icecast / liquidsoap output for real multi-room / public station
-- [ ] M3U export of current playlist order
 - [ ] Windows / Mac / Linux "appliance" single-binary builds (Tauri or PyInstaller + tray)
 
 ## Phase 4 — Community & Extensions

@@ -107,6 +107,21 @@ export default function App() {
             </button>
 
             <button
+              onClick={() => {
+                const link = document.createElement('a')
+                link.href = '/api/export/m3u'
+                link.download = 'beacon-fm-playlist.m3u'
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+              }}
+              className="flex items-center gap-2 text-xs px-3 py-2 rounded-2xl bg-[#2c261f] hover:bg-[#3a3229] active:bg-black/50"
+              title="Download current non-repeating order as .m3u playlist"
+            >
+              Export M3U
+            </button>
+
+            <button
               onClick={() => setShowSettings(true)}
               className="p-2 rounded-2xl bg-[#2c261f] hover:bg-[#3a3229]"
             >
@@ -188,11 +203,11 @@ export default function App() {
               className="bg-[#1f1a14] rounded-3xl max-w-lg w-full p-6 max-h-[70vh] overflow-auto"
               onClick={e => e.stopPropagation()}
             >
-              <div className="flex justify-between mb-4">
+              <div className="flex justify-between mb-4 items-center">
                 <div className="font-semibold text-lg">Catalog — {player.total} tracks</div>
                 <button onClick={() => setShowLibrary(false)} className="text-[#c8b8a0]">Close</button>
               </div>
-              <div className="text-xs text-[#c8b8a0] mb-3">Click any title to jump (radio order is preserved)</div>
+              <div className="text-xs text-[#c8b8a0] mb-3">Click any title to jump • ★ = Favorite</div>
               <LibraryList onJump={(id) => { player.jumpTo(id); setShowLibrary(false) }} />
             </motion.div>
           </div>
@@ -202,26 +217,53 @@ export default function App() {
   )
 }
 
-// Simple lazy list (fetches on open)
+// Simple lazy list with Phase 3 Favorites support
 function LibraryList({ onJump }: { onJump: (id: string) => void }) {
   const [tracks, setTracks] = useState<any[]>([])
+  const [favorites, setFavorites] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     fetch('/api/tracks').then(r => r.json()).then(d => setTracks(d.tracks || []))
+    fetch('/api/favorites').then(r => r.json()).then(d => {
+      setFavorites(new Set((d.favorites || []).map((f: any) => f.id)))
+    })
   }, [])
+
+  const toggleFav = async (e: React.MouseEvent, trackId: string) => {
+    e.stopPropagation()
+    const res = await fetch(`/api/favorites/${trackId}/toggle`, { method: 'POST' })
+    const data = await res.json()
+    setFavorites(prev => {
+      const next = new Set(prev)
+      if (data.is_favorite) next.add(trackId)
+      else next.delete(trackId)
+      return next
+    })
+  }
 
   return (
     <div className="space-y-px text-sm max-h-[52vh] overflow-auto pr-1">
-      {tracks.slice(0, 400).map((t, i) => (
-        <button 
-          key={i} 
-          onClick={() => onJump(t.id)}
-          className="w-full text-left px-3 py-2 hover:bg-white/5 rounded-xl flex justify-between group"
-        >
-          <span className="truncate group-hover:text-[#ffbf00]">{t.title}</span>
-          <span className="text-[#c8b8a0] pl-4 text-right shrink-0 tabular-nums text-xs self-center">{t.artist}</span>
-        </button>
-      ))}
+      {tracks.slice(0, 400).map((t, i) => {
+        const isFav = favorites.has(t.id)
+        return (
+          <div 
+            key={i} 
+            onClick={() => onJump(t.id)}
+            className="w-full text-left px-3 py-2 hover:bg-white/5 rounded-xl flex justify-between group cursor-pointer"
+          >
+            <div className="flex items-center gap-2 truncate">
+              <button 
+                onClick={(e) => toggleFav(e, t.id)}
+                className="text-lg leading-none hover:scale-110 transition"
+              >
+                {isFav ? "★" : "☆"}
+              </button>
+              <span className="truncate group-hover:text-[#ffbf00]">{t.title}</span>
+            </div>
+            <span className="text-[#c8b8a0] pl-4 text-right shrink-0 tabular-nums text-xs self-center">{t.artist}</span>
+          </div>
+        )
+      })}
       {tracks.length > 400 && <div className="text-center text-xs py-2 text-[#c8b8a0]">... and {tracks.length - 400} more</div>}
     </div>
   )

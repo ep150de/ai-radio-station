@@ -19,12 +19,13 @@ class Track(BaseModel):
 
 class PlaylistState(BaseModel):
     """Persisted radio state — survives restarts."""
-    version: int = 1
+    version: int = 2
     order: list[str]             # List of track IDs (shuffled once or user order)
     current_index: int = 0
     cycle: int = 1               # How many full plays through the catalog
     is_playing: bool = False
     last_position: float = 0.0   # Seconds into current track (for future resume)
+    favorites: list[str] = []    # Phase 3: list of favorite track IDs
 
 
 class ApiTrack(Track):
